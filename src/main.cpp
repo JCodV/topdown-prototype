@@ -88,19 +88,19 @@ int main(void)
     InitWindow(screenWidth, screenHeight, "boss-rush");
     SetTargetFPS(60);
 
-    //std::shared_ptr<Player> player = std::make_shared<Player>(Player(Vector2 {screenWidth/2.0f, screenHeight/2.0f}, 40.0f));
-    //Enemy enemy(player, Vector2 {screenWidth/2.0f + 40.0f, screenHeight/2.0f + 40.0f}, 20.0f);
+    Player* player = new Player(Vector2 {GetScreenWidth()/2.0f, GetScreenHeight()/2.0f}, 100, 50.0f, 10.0f);
+    Enemy* enemy = new Enemy(player, Vector2 {GetScreenWidth()/2.0f, GetScreenHeight()/2.0f}, 50, 30.0f, 10.0f);
     while (!WindowShouldClose())
     {
-        //player->update();
-        //enemy.update();
+        player->update();
+        enemy->update();
 
 
         BeginDrawing();
         ClearBackground(LIGHTGRAY);
 
-        //player->render();
-        //enemy.render();
+        player->render();
+        enemy->render();
         EndDrawing();
     }
 
@@ -125,17 +125,21 @@ void Entity::render()
 Actor::Actor(Vector2 position, float base_speed, int max_health, float base_melee_damage)
     : Entity(position),
     target(nullptr),
+    velocity(Vector2Zeros),
+    speed(base_speed),
     base_speed(base_speed),
     max_health(max_health),
     base_melee_damage(base_melee_damage),
     is_alive(true)
 {
-    std::cout << "CAUTION: target is nullptr" << '\n';
+    std::cout << "CAUTION: target is not initailized, nullptr" << '\n';
 }
 
 Actor::Actor(Actor* target, Vector2 position, float base_speed, int max_health, float base_melee_damage)
     : Entity(position),
     target(target),
+    velocity(Vector2Zeros),
+    speed(base_speed),
     base_speed(base_speed),
     max_health(max_health),
     base_melee_damage(base_melee_damage),
@@ -158,6 +162,7 @@ Player::Player(Vector2 position, int max_health, float base_speed, int base_mele
     dash_cooldown(5.0f),
     can_dash(true)
 {
+    std::cout << "player spawned";
 }
 
 void Player::update()
@@ -177,6 +182,7 @@ void Player::update()
         dash_time_elapsed += GetFrameTime();
     }
 
+    //std::cout << position.x << ' ' << position.y << '\n';
     update_position();
 }
 
@@ -187,6 +193,7 @@ void Player::render()
     std::string speed_text = "Current speed:" + std::to_string(speed);
     DrawText(time_text.c_str(), GetScreenWidth()/2.0f, GetScreenHeight()/2.0f, 20, BLACK);
     DrawText(speed_text.c_str(), GetScreenWidth()/2.0f, GetScreenHeight()/2.0f + 30, 20, BLACK);
+    //std::cout << "player render";
 }
 
 void Player::handle_basic_movement()
@@ -240,9 +247,7 @@ void Enemy::update()
 
     chase_player();
 
-    if (velocity != Vector2Zeros) {
-        position = Vector2Add(position, velocity);
-    }
+    update_position();
 }
 void Enemy::render()
 {
@@ -251,14 +256,14 @@ void Enemy::render()
 
 void Enemy::chase_player()
 {
-    std::cout << "Player position: " << target->position.x << ", " << target->position.y << '\n';
+    //std::cout << "Player position: " << target->position.x << ", " << target->position.y << '\n';
     Vector2 direction_to_player = Vector2Normalize(Vector2Subtract(target->position, position));
     velocity = Vector2Scale(direction_to_player, speed * GetFrameTime());
 }
 
 void Enemy::attack_player()
 {
-    std::cout << "CHOMP" << '\n';
+    //std::cout << "CHOMP" << '\n';
     target->health -= base_melee_damage;
 }
 
