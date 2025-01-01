@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <memory>
 #include "raylib.h"
 #include "raymath.h"
 
@@ -92,8 +93,10 @@ enum class LevelNumber
 class Level
 {
 public:
+    LevelNumber level_number;
     Player* player;
     std::vector<Enemy*> active_enemies;
+    //std::vector<Obstacle> active_obstacles;
 
     Level(LevelNumber level_number);
 
@@ -104,9 +107,9 @@ private:
     bool is_game_over;
     bool is_complete;
 
-    void set_player(LevelNumber);
-    void spawn_enemies(LevelNumber);
-    void spawn_obstacles(LevelNumber);
+    void set_player();
+    void spawn_enemies();
+    void spawn_obstacles();
 
     void cleanup_all();
     // void cleanup_dead_enemies();
@@ -131,12 +134,13 @@ public:
     Game();
     void run();
 private:
-    Level* current_level;
+    std::unique_ptr<Level> current_level;
 
     void update();
     void render();
 
-    void switch_level(LevelNumber);
+    void switch_level(LevelNumber next_level);
+    void cleanup();
 };
 
 int main(void)
@@ -333,33 +337,58 @@ Level::Level(LevelNumber level_number)
 
 void Level::update()
 {
+    for (Enemy* enemy : active_enemies) {
+        enemy->render();
+    }
 
+    //for (const Obstacle& obs : active_obstacles) {
+    //    obs.update();
+    //}
 }
 
 void Level::render()
 {
+    for (Enemy* enemy : active_enemies) {
+        enemy->render();
+    }
 
+    //for (const Obstacle& obs : active_obstacles) {
+    //    obs.render();
+    //}
+}
+
+void Level::spawn_enemies()
+{
+    switch (level_number) {
+        case LevelNumber::UNDEFINED:
+            break;
+        case LevelNumber::ONE:
+            break;
+        case LevelNumber::TWO:
+            break;
+        case LevelNumber::THREE:
+            break;
+    }
+}
+
+void Level::spawn_obstacles()
+{
+    switch (level_number) {
+        case LevelNumber::UNDEFINED:
+            break;
+        case LevelNumber::ONE:
+            break;
+        case LevelNumber::TWO:
+            break;
+        case LevelNumber::THREE:
+            break;
+    }
 }
 
 void Level::cleanup_all()
 {
 
 }
-
-//Level::spawn_enemies()
-//{
-//
-//}
-//
-//Level::spawn_obstacles()
-//{
-//
-//}
-//
-//Level::cleanup()
-//{
-//
-//}
 
 Game::Game()
 {
@@ -368,20 +397,29 @@ Game::Game()
 
 void Game::run()
 {
-
+    update();
+    BeginDrawing();
+    ClearBackground(WHITE);
+    render();
+    EndDrawing();
 }
 
 void Game::update()
 {
-
+    current_level->update();
 }
 
 void Game::render()
 {
-
+    current_level->render();
 }
 
-void Game::switch_level(LevelNumber)
+void Game::switch_level(LevelNumber next_level)
+{
+    current_level = std::make_unique<Level>(next_level);
+}
+
+void Game::cleanup()
 {
 
 }
