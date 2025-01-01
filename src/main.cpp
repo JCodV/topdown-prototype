@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 #include <string>
 #include "raylib.h"
 #include "raymath.h"
@@ -78,6 +79,64 @@ private:
     void chase_player();
     void attack_player();
 private:
+};
+
+enum class LevelNumber
+{
+    UNDEFINED,
+    ONE,
+    TWO,
+    THREE,
+};
+
+class Level
+{
+public:
+    Player* player;
+    std::vector<Enemy*> active_enemies;
+
+    Level(LevelNumber level_number);
+
+    void update();
+    void render();
+private:
+    int score;
+    bool is_game_over;
+    bool is_complete;
+
+    void set_player(LevelNumber);
+    void spawn_enemies(LevelNumber);
+    void spawn_obstacles(LevelNumber);
+
+    void cleanup_all();
+    // void cleanup_dead_enemies();
+    // void cleanup_obstacles();
+    // void cleanup_player();
+};
+
+enum class GameScreen
+{
+    UNDEFINED,
+    TITLE,
+    LOADING,
+    OPTIONS,
+    GAMEPLAY
+};
+
+class Game
+{
+public:
+    GameScreen screen;
+
+    Game();
+    void run();
+private:
+    Level* current_level;
+
+    void update();
+    void render();
+
+    void switch_level(LevelNumber);
 };
 
 int main(void)
@@ -267,3 +326,62 @@ void Enemy::attack_player()
     target->health -= base_melee_damage;
 }
 
+Level::Level(LevelNumber level_number)
+{
+
+}
+
+void Level::update()
+{
+
+}
+
+void Level::render()
+{
+
+}
+
+void Level::cleanup_all()
+{
+
+}
+
+//Level::spawn_enemies()
+//{
+//
+//}
+//
+//Level::spawn_obstacles()
+//{
+//
+//}
+//
+//Level::cleanup()
+//{
+//
+//}
+
+Game::Game()
+{
+
+}
+
+void Game::run()
+{
+
+}
+
+void Game::update()
+{
+
+}
+
+void Game::render()
+{
+
+}
+
+void Game::switch_level(LevelNumber)
+{
+
+}
