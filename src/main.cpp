@@ -1,4 +1,5 @@
 #include <iostream>
+#include <memory>
 #include <string>
 #include "raylib.h"
 #include "raymath.h"
@@ -21,7 +22,7 @@ public:
     Vector2 velocity;
     float speed;
 
-    Player(Vector2 position, float speed);
+    Player(Vector2 position, float base_speed);
 
     void update() override;
     void render() override;
@@ -39,6 +40,33 @@ private:
     void reset_dash();
 };
 
+class Enemy : public Entity
+{
+public:
+    enum class DistanceFromPlayer
+    {
+        UNDEFINED,
+        CLOSE = 15,
+        MID = 30,
+        FAR = 100,
+    };
+
+    Vector2 velocity;
+    float speed;
+
+    Enemy(std::shared_ptr<Player> player_target, Vector2 position, float base_speed);
+
+    void update() override;
+    void render() override;
+private:
+    std::shared_ptr<Player> player_target;
+    DistanceFromPlayer distance_from_player;
+    float base_speed;
+
+    void chase_player();
+private:
+};
+
 int main(void)
 {
     const int screenWidth = 1270;
@@ -47,16 +75,19 @@ int main(void)
     InitWindow(screenWidth, screenHeight, "boss-rush");
     SetTargetFPS(60);
 
-    Player player(Vector2 {screenWidth/2.0f, screenHeight/2.0f}, 40.0f);
-
+    std::shared_ptr<Player> player = std::make_shared<Player>(Player(Vector2 {screenWidth/2.0f, screenHeight/2.0f}, 40.0f));
+    Enemy enemy(player, Vector2 {screenWidth/2.0f + 40.0f, screenHeight/2.0f + 40.0f}, 20.0f);
     while (!WindowShouldClose())
     {
-        player.update();
+        player->update();
+        enemy.update();
+
 
         BeginDrawing();
         ClearBackground(LIGHTGRAY);
 
-        player.render();
+        player->render();
+        enemy.render();
         EndDrawing();
     }
 
@@ -157,4 +188,32 @@ void Player::reset_dash()
     dash_time_elapsed = 0.0f;
     speed = base_speed;
     can_dash = true;
+}
+
+Enemy::Enemy(std::shared_ptr<Player> player_target, Vector2 position, float base_speed)
+    : Entity(position),
+    base_speed(base_speed),
+    speed(base_speed),
+    player_target(player_target)
+{
+}
+
+void Enemy::update()
+{
+    chase_player();
+
+    if (velocity != Vector2Zeros) {
+        position = Vector2Add(position, velocity);
+    }
+}
+void Enemy::render()
+{
+    DrawCircleV(position, 10.0f, GREEN);
+}
+
+void Enemy::chase_player()
+{
+    std::cout << "Player position: " << player_target->position.x << ", " << player_target->position.y << '\n';
+    Vector2 direction_to_player = Vector2Normalize(Vector2Subtract(player_target->position, position));
+    velocity = Vector2Scale(direction_to_player, speed * GetFrameTime());
 }

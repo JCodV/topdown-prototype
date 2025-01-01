@@ -1,0 +1,7 @@
+do whenever:
+- [ ] add the player dashing cooldown so it cant be spammed
+
+12/31/24:
+- [X] player controller
+- [X] player dashing
+- [ ] basic enemy tracking
