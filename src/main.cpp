@@ -1,5 +1,4 @@
 #include <iostream>
-#include <memory>
 #include <string>
 #include "raylib.h"
 #include "raymath.h"
@@ -16,15 +15,30 @@ public:
 private:
 };
 
-class Player : public Entity
+class Actor : public Entity
 {
 public:
+    Actor* target;
     Vector2 velocity;
     float speed;
+    float base_speed;
+    int base_melee_damage;
     int max_health;
     int health;
+    bool is_alive;
 
-    Player(Vector2 position, float base_speed, int base_melee_damage);
+    Actor(Vector2 position, float base_speed, int max_health, float base_melee_damage);
+    Actor(Actor* target, Vector2 position, float base_speed, int max_health, float base_melee_damage);
+
+    // include in all update methods
+    void update_position();
+private:
+};
+
+class Player : public Actor
+{
+public:
+    Player(Vector2 position, int max_health, float base_speed, int base_melee_damage);
 
     void update() override;
     void render() override;
@@ -43,7 +57,7 @@ private:
     void reset_dash();
 };
 
-class Enemy : public Entity
+class Enemy : public Actor
 {
 public:
     enum class DistanceFromPlayer
@@ -54,20 +68,12 @@ public:
         FAR = 100,
     };
 
-    Vector2 velocity;
-    float speed;
-    int max_health;
-    int health;
-
-    Enemy(std::shared_ptr<Player> player_target, Vector2 position, float base_speed, int base_melee_damage);
+    Enemy(Actor* target, Vector2 position, int max_health, float base_speed, int base_melee_damage);
 
     void update() override;
     void render() override;
 private:
-    std::shared_ptr<Player> player_target;
     DistanceFromPlayer distance_from_player;
-    float base_speed;
-    int base_melee_damage;
 
     void chase_player();
     void attack_player();
@@ -82,19 +88,19 @@ int main(void)
     InitWindow(screenWidth, screenHeight, "boss-rush");
     SetTargetFPS(60);
 
-    std::shared_ptr<Player> player = std::make_shared<Player>(Player(Vector2 {screenWidth/2.0f, screenHeight/2.0f}, 40.0f));
-    Enemy enemy(player, Vector2 {screenWidth/2.0f + 40.0f, screenHeight/2.0f + 40.0f}, 20.0f);
+    //std::shared_ptr<Player> player = std::make_shared<Player>(Player(Vector2 {screenWidth/2.0f, screenHeight/2.0f}, 40.0f));
+    //Enemy enemy(player, Vector2 {screenWidth/2.0f + 40.0f, screenHeight/2.0f + 40.0f}, 20.0f);
     while (!WindowShouldClose())
     {
-        player->update();
-        enemy.update();
+        //player->update();
+        //enemy.update();
 
 
         BeginDrawing();
         ClearBackground(LIGHTGRAY);
 
-        player->render();
-        enemy.render();
+        //player->render();
+        //enemy.render();
         EndDrawing();
     }
 
@@ -116,13 +122,36 @@ void Entity::render()
     DrawCircleV(position, 10.0, RED);
 }
 
-Player::Player(Vector2 position, float base_speed, int base_melee_damage)
+Actor::Actor(Vector2 position, float base_speed, int max_health, float base_melee_damage)
     : Entity(position),
+    target(nullptr),
     base_speed(base_speed),
+    max_health(max_health),
     base_melee_damage(base_melee_damage),
-    speed(base_speed),
-    max_health(100),
-    health(100),
+    is_alive(true)
+{
+    std::cout << "CAUTION: target is nullptr" << '\n';
+}
+
+Actor::Actor(Actor* target, Vector2 position, float base_speed, int max_health, float base_melee_damage)
+    : Entity(position),
+    target(target),
+    base_speed(base_speed),
+    max_health(max_health),
+    base_melee_damage(base_melee_damage),
+    is_alive(true)
+{
+}
+
+void Actor::update_position()
+{
+    if (velocity != Vector2Zeros) {
+        position = Vector2Add(position, velocity);
+    }
+}
+
+Player::Player(Vector2 position, int max_health, float base_speed, int base_melee_damage)
+    : Actor(position, base_speed, max_health, base_melee_damage),
     dash_duration(0.15f), 
     dash_time_elapsed(0.0f),
     dash_speed(base_speed*10.0f),
@@ -148,9 +177,7 @@ void Player::update()
         dash_time_elapsed += GetFrameTime();
     }
 
-    if (velocity != Vector2Zeros) {
-        position = Vector2Add(position, velocity);
-    }
+    update_position();
 }
 
 void Player::render()
@@ -200,20 +227,14 @@ void Player::reset_dash()
     can_dash = true;
 }
 
-Enemy::Enemy(std::shared_ptr<Player> player_target, Vector2 position, float base_speed, int base_melee_damage)
-    : Entity(position),
-    base_speed(base_speed),
-    speed(base_speed),
-    max_health(100),
-    health(100),
-    player_target(player_target),
-    base_melee_damage(base_melee_damage)
+Enemy::Enemy(Actor* target, Vector2 position, int max_health, float base_speed, int base_melee_damage)
+    : Actor(target, position, max_health, base_speed, base_melee_damage)
 {
 }
 
 void Enemy::update()
 {
-    if (CheckCollisionCircles(player_target->position, 10.0f, position, 10.0f)) {
+    if (CheckCollisionCircles(target->position, 10.0f, position, 10.0f)) {
         attack_player();
     }
 
@@ -230,13 +251,14 @@ void Enemy::render()
 
 void Enemy::chase_player()
 {
-    std::cout << "Player position: " << player_target->position.x << ", " << player_target->position.y << '\n';
-    Vector2 direction_to_player = Vector2Normalize(Vector2Subtract(player_target->position, position));
+    std::cout << "Player position: " << target->position.x << ", " << target->position.y << '\n';
+    Vector2 direction_to_player = Vector2Normalize(Vector2Subtract(target->position, position));
     velocity = Vector2Scale(direction_to_player, speed * GetFrameTime());
 }
 
 void Enemy::attack_player()
 {
     std::cout << "CHOMP" << '\n';
-    player_target->health -= base_melee_damage;
+    target->health -= base_melee_damage;
 }
+
