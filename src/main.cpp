@@ -21,13 +21,16 @@ class Player : public Entity
 public:
     Vector2 velocity;
     float speed;
+    int max_health;
+    int health;
 
-    Player(Vector2 position, float base_speed);
+    Player(Vector2 position, float base_speed, int base_melee_damage);
 
     void update() override;
     void render() override;
 private:
     float base_speed;
+    int base_melee_damage;
 
     float dash_duration;
     float dash_time_elapsed;
@@ -53,8 +56,10 @@ public:
 
     Vector2 velocity;
     float speed;
+    int max_health;
+    int health;
 
-    Enemy(std::shared_ptr<Player> player_target, Vector2 position, float base_speed);
+    Enemy(std::shared_ptr<Player> player_target, Vector2 position, float base_speed, int base_melee_damage);
 
     void update() override;
     void render() override;
@@ -62,8 +67,10 @@ private:
     std::shared_ptr<Player> player_target;
     DistanceFromPlayer distance_from_player;
     float base_speed;
+    int base_melee_damage;
 
     void chase_player();
+    void attack_player();
 private:
 };
 
@@ -109,10 +116,13 @@ void Entity::render()
     DrawCircleV(position, 10.0, RED);
 }
 
-Player::Player(Vector2 position, float base_speed)
+Player::Player(Vector2 position, float base_speed, int base_melee_damage)
     : Entity(position),
     base_speed(base_speed),
+    base_melee_damage(base_melee_damage),
     speed(base_speed),
+    max_health(100),
+    health(100),
     dash_duration(0.15f), 
     dash_time_elapsed(0.0f),
     dash_speed(base_speed*10.0f),
@@ -190,16 +200,23 @@ void Player::reset_dash()
     can_dash = true;
 }
 
-Enemy::Enemy(std::shared_ptr<Player> player_target, Vector2 position, float base_speed)
+Enemy::Enemy(std::shared_ptr<Player> player_target, Vector2 position, float base_speed, int base_melee_damage)
     : Entity(position),
     base_speed(base_speed),
     speed(base_speed),
-    player_target(player_target)
+    max_health(100),
+    health(100),
+    player_target(player_target),
+    base_melee_damage(base_melee_damage)
 {
 }
 
 void Enemy::update()
 {
+    if (CheckCollisionCircles(player_target->position, 10.0f, position, 10.0f)) {
+        attack_player();
+    }
+
     chase_player();
 
     if (velocity != Vector2Zeros) {
@@ -216,4 +233,10 @@ void Enemy::chase_player()
     std::cout << "Player position: " << player_target->position.x << ", " << player_target->position.y << '\n';
     Vector2 direction_to_player = Vector2Normalize(Vector2Subtract(player_target->position, position));
     velocity = Vector2Scale(direction_to_player, speed * GetFrameTime());
+}
+
+void Enemy::attack_player()
+{
+    std::cout << "CHOMP" << '\n';
+    player_target->health -= base_melee_damage;
 }
