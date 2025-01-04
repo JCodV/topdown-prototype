@@ -5,10 +5,15 @@
 #include "raylib.h"
 #include "raymath.h"
 
-// free space = 0
-// walls = 1
-// enemies = 2
-// player = 3
+const int ENEMY_BODY_RADIUS = 10;
+const int ENEMY_MAX_HEALTH = 40;
+const float ENEMY_BASE_SPEED = 30.0f;
+const float ENEMY_BASE_MELEE_DAMAGE = 10.0f;
+
+const int PLAYER_BODY_RADIUS = 15;
+const int PLAYER_MAX_HEALTH = 100;
+const float PLAYER_BASE_SPEED = 50.0f;
+const float PLAYER_BASE_MELEE_DAMAGE = 10.0f;
 
 // 8 x 6
 const std::vector<std::vector<int>> level_one_map =
@@ -25,6 +30,7 @@ class Entity
 public:
     Vector2 position;
 
+    Entity();
     Entity(Vector2 position);
 
     virtual void update();
@@ -106,8 +112,8 @@ public:
 
     Obstacle(Vector2 position, int width, int height, bool is_destructable);
 
-    void update();
-    void render();
+    void update() override;
+    void render() override;
 private:
 };
 
@@ -132,6 +138,7 @@ public:
     void update();
     void render();
 private:
+    std::vector<std::vector<Entity>> level_map;
     int score;
     bool is_game_over;
     bool is_complete;
@@ -139,7 +146,7 @@ private:
     void set_player();
     void spawn_enemies();
     void spawn_obstacles();
-    void load_map(const std::vector<std::vector<int>> level_map);
+    void load_map(const std::vector<std::vector<int>> map_data);
 
     void cleanup_all();
     // void cleanup_dead_enemies();
@@ -201,6 +208,11 @@ int main(void)
     return 0;
 }
 
+Entity::Entity()
+    : position(Vector2Zeros)
+{
+}
+
 Entity::Entity(Vector2 position)
     : position(position)
 {
@@ -212,7 +224,7 @@ void Entity::update()
 
 void Entity::render()
 {
-    DrawCircleV(position, 10.0, RED);
+    DrawCircleV(position, ENEMY_BODY_RADIUS, RED);
 }
 
 Actor::Actor(Vector2 position, float base_speed, int max_health, float base_melee_damage)
@@ -281,7 +293,7 @@ void Player::update()
 
 void Player::render()
 {
-    DrawCircleV(position, 10.0f, RED);
+    DrawCircleV(position, PLAYER_BODY_RADIUS, RED);
     std::string time_text = "Dash time elapsed:" + std::to_string(dash_time_elapsed);
     std::string speed_text = "Current speed:" + std::to_string(speed);
     DrawText(time_text.c_str(), GetScreenWidth()/2.0f, GetScreenHeight()/2.0f, 20, BLACK);
@@ -431,9 +443,54 @@ void Level::spawn_obstacles()
     }
 }
 
-void Level::load_map(const std::vector<std::vector<int>> level_map)
+void Level::load_map(const std::vector<std::vector<int>> map_data)
 {
+    // free space = 0
+    // walls = 1
+    // enemies = 2
+    // player = 3
 
+
+    int tile_width = GetScreenWidth() / map_data.size();
+    int tile_height = GetScreenHeight() / map_data[0].size();
+
+    std::vector<std::vector<Entity>> map_to_load(map_data.size(), std::vector<Entity>(map_data[0].size()));
+    for (int i = 0; i < map_data.size(); i++) {
+        for (int j = 0; j < map_data[i].size(); j++) {
+            Vector2 position {(float)tile_width * i, (float)tile_height * j};
+            switch (map_data[i][j]) {
+                case 0:
+                    break;
+                case 1:
+                {
+                    Obstacle wall(position, tile_width, tile_height, false);
+                    active_obstacles.push_back(wall);
+                    break;
+                }
+                case 2:
+                {
+                    Enemy* enemy = new Enemy(nullptr, position, ENEMY_MAX_HEALTH, ENEMY_BASE_SPEED, ENEMY_BASE_MELEE_DAMAGE);
+                    active_enemies.push_back(enemy);
+                    break;
+                }
+                case 3:
+                {
+                    player = new Player(position, PLAYER_MAX_HEALTH, PLAYER_BASE_SPEED, PLAYER_BASE_MELEE_DAMAGE);
+                    break;
+                }
+            }
+        }
+    }
+
+    if (player == nullptr) {
+        std::cerr << "MAP DATA DOES NOT CONTAIN A PLAYER, UNABLE TO LOAD MAP";
+    }
+    else {
+        for (Enemy* e : active_enemies) {
+            e->target = player;
+        }
+        std::cout << "MAP SUCCESSFULLY LOADED" << '\n';
+    }
 }
 
 void Level::cleanup_all()
@@ -443,7 +500,8 @@ void Level::cleanup_all()
 
 Game::Game()
 {
-
+    InitWindow(1280, 720, "My Game");
+    SetTargetFPS(60);
 }
 
 void Game::run()
