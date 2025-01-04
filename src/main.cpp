@@ -25,6 +25,11 @@ const std::vector<std::vector<int>> level_one_map =
         {1, 0, 0, 0, 0, 0, 0, 1},
         {1, 1, 1, 1, 1, 1, 1, 1},
     };
+
+const std::vector<std::vector<int>> level_two_map;
+
+const std::vector<std::vector<int>> level_three_map;
+
 class Entity
 {
 public:
@@ -188,19 +193,22 @@ int main(void)
     InitWindow(screenWidth, screenHeight, "boss-rush");
     SetTargetFPS(60);
 
+    Level level(LevelNumber::ONE);
     Player* player = new Player(Vector2 {GetScreenWidth()/2.0f, GetScreenHeight()/2.0f}, 100, 50.0f, 10.0f);
     Enemy* enemy = new Enemy(player, Vector2 {GetScreenWidth()/2.0f, GetScreenHeight()/2.0f}, 50, 30.0f, 10.0f);
     while (!WindowShouldClose())
     {
-        player->update();
-        enemy->update();
+        level.update();
+        //player->update();
+        //enemy->update();
 
 
         BeginDrawing();
         ClearBackground(LIGHTGRAY);
+        level.render();
 
-        player->render();
-        enemy->render();
+        //player->render();
+        //enemy->render();
         EndDrawing();
     }
 
@@ -387,16 +395,41 @@ void Obstacle::render()
 
 Level::Level(LevelNumber level_number)
 {
+    switch (level_number) {
+        case LevelNumber::UNDEFINED:
+        {
+                std::cerr << "UNDEFINED LEVEL NUMBER!" << '\n';
+                break;
+        }
+        case LevelNumber::ONE:
+        {
+                load_map(level_one_map);
+                break;
+        }
+        case LevelNumber::TWO:
+        {
+                load_map(level_two_map);
+                break;
+        }
+        case LevelNumber::THREE:
+        {
+                load_map(level_three_map);
+                break;
+        }
+    }
 }
 
 void Level::update()
 {
     for (Enemy* enemy : active_enemies) {
-        enemy->render();
+        enemy->update();
     }
-    //for (const Obstacle& obs : active_obstacles) {
-    //    obs.update();
-    //}
+
+    player->update();
+
+    for (Obstacle& obs : active_obstacles) {
+        obs.update();
+    }
 }
 
 void Level::render()
@@ -405,9 +438,11 @@ void Level::render()
         enemy->render();
     }
 
-    //for (const Obstacle& obs : active_obstacles) {
-    //    obs.render();
-    //}
+    player->render();
+
+    for (Obstacle& obs : active_obstacles) {
+        obs.render();
+    }
 }
 
 void Level::set_player()
@@ -495,7 +530,6 @@ void Level::load_map(const std::vector<std::vector<int>> map_data)
 
 void Level::cleanup_all()
 {
-
 }
 
 Game::Game()
@@ -530,5 +564,4 @@ void Game::switch_level(LevelNumber next_level)
 
 void Game::cleanup()
 {
-
 }
