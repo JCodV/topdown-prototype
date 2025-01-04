@@ -5,6 +5,21 @@
 #include "raylib.h"
 #include "raymath.h"
 
+// free space = 0
+// walls = 1
+// enemies = 2
+// player = 3
+
+// 8 x 6
+const std::vector<std::vector<int>> level_one_map =
+    {
+        {1, 1, 1, 1, 1, 1, 1, 1},
+        {1, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 1},
+        {1, 1, 1, 1, 1, 1, 1, 1},
+    };
 class Entity
 {
 public:
@@ -82,6 +97,20 @@ private:
 private:
 };
 
+class Obstacle : public Entity
+{
+public:
+    int width;
+    int height;
+    bool is_destructable;
+
+    Obstacle(Vector2 position, int width, int height, bool is_destructable);
+
+    void update();
+    void render();
+private:
+};
+
 enum class LevelNumber
 {
     UNDEFINED,
@@ -96,7 +125,7 @@ public:
     LevelNumber level_number;
     Player* player;
     std::vector<Enemy*> active_enemies;
-    //std::vector<Obstacle> active_obstacles;
+    std::vector<Obstacle> active_obstacles;
 
     Level(LevelNumber level_number);
 
@@ -110,6 +139,7 @@ private:
     void set_player();
     void spawn_enemies();
     void spawn_obstacles();
+    void load_map(const std::vector<std::vector<int>> level_map);
 
     void cleanup_all();
     // void cleanup_dead_enemies();
@@ -256,7 +286,6 @@ void Player::render()
     std::string speed_text = "Current speed:" + std::to_string(speed);
     DrawText(time_text.c_str(), GetScreenWidth()/2.0f, GetScreenHeight()/2.0f, 20, BLACK);
     DrawText(speed_text.c_str(), GetScreenWidth()/2.0f, GetScreenHeight()/2.0f + 30, 20, BLACK);
-    //std::cout << "player render";
 }
 
 void Player::handle_basic_movement()
@@ -330,9 +359,22 @@ void Enemy::attack_player()
     target->health -= base_melee_damage;
 }
 
+Obstacle::Obstacle(Vector2 position, int width, int height, bool is_destructable)
+    : Entity(position), width(width), height(height), is_destructable(is_destructable)
+{
+}
+
+void Obstacle::update()
+{
+}
+
+void Obstacle::render()
+{
+    DrawRectangle(int(position.x), int(position.y), width, height, BLUE);
+}
+
 Level::Level(LevelNumber level_number)
 {
-
 }
 
 void Level::update()
@@ -340,7 +382,6 @@ void Level::update()
     for (Enemy* enemy : active_enemies) {
         enemy->render();
     }
-
     //for (const Obstacle& obs : active_obstacles) {
     //    obs.update();
     //}
@@ -355,6 +396,11 @@ void Level::render()
     //for (const Obstacle& obs : active_obstacles) {
     //    obs.render();
     //}
+}
+
+void Level::set_player()
+{
+
 }
 
 void Level::spawn_enemies()
@@ -383,6 +429,11 @@ void Level::spawn_obstacles()
         case LevelNumber::THREE:
             break;
     }
+}
+
+void Level::load_map(const std::vector<std::vector<int>> level_map)
+{
+
 }
 
 void Level::cleanup_all()

@@ -4,4 +4,4 @@ do whenever:
 12/31/24:
 - [X] player controller
 - [X] player dashing
-- [ ] basic enemy tracking
+- [X] basic enemy tracking
