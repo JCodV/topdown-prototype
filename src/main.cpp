@@ -375,7 +375,7 @@ void Enemy::chase_player()
 
 void Enemy::attack_player()
 {
-    //std::cout << "CHOMP" << '\n';
+    std::cout << "CHOMP" << '\n';
     target->health -= base_melee_damage;
 }
 
@@ -421,8 +421,13 @@ Level::Level(LevelNumber level_number)
 
 void Level::update()
 {
+
     for (Enemy* enemy : active_enemies) {
         enemy->update();
+
+        if (CheckCollisionPointCircle(GetMousePosition(), enemy->position, ENEMY_BODY_RADIUS)) {
+            player->target = enemy;
+        }
     }
 
     player->update();
