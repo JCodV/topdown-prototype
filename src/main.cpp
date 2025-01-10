@@ -61,8 +61,9 @@ public:
 
     // include in all update methods
     void update_position();
-
 private:
+    void static_collision_response(); // use case: collision
+
 };
 
 class Player : public Actor
@@ -190,24 +191,33 @@ private:
     void render();
 
     void switch_level(LevelNumber next_level);
-    void cleanup();
+    // void cleanup();
 };
 
 int main(void)
 {
     InitWindow(1280, 720, "Robot game");
     SetTargetFPS(60);
+    //bool paused = false;
 
     Level level(LevelNumber::ONE);
+
     while (!WindowShouldClose())
     {
-        level.update();
+        //if (IsKeyPressed(KEY_ENTER)) paused = true;
+        //else if (paused && IsKeyPressed(KEY_ENTER)) paused = false;
+        //std::cout << "paused: " << paused << '\n';
 
-        BeginDrawing();
-        ClearBackground(LIGHTGRAY);
-        level.render();
+        //if (!paused) {
+            level.update();
 
-        EndDrawing();
+            BeginDrawing();
+            ClearBackground(LIGHTGRAY);
+            level.render();
+
+            EndDrawing();
+        //}
+
     }
 
     CloseWindow();
@@ -264,6 +274,10 @@ void Actor::update_position()
     {
         position = Vector2Add(position, velocity);
     }
+}
+
+void Actor::static_collision_response() {
+    speed = 0.0f;
 }
 
 Player::Player(Vector2 position, int max_health, float base_speed, int base_melee_damage)
@@ -383,7 +397,7 @@ void Enemy::chase_player()
 
 void Enemy::attack_player()
 {
-    std::cout << "CHOMP" << '\n';
+    // std::cout << "CHOMP" << '\n';
     target->health -= base_melee_damage;
 }
 
@@ -433,8 +447,6 @@ void Level::update()
     for (Enemy *enemy : active_enemies)
     {
         enemy->update();
-
-        std::cout << "heleeell";
         if (CheckCollisionPointCircle(GetMousePosition(), enemy->position, ENEMY_BODY_RADIUS))
         {
             player->target = enemy;
@@ -555,6 +567,16 @@ void Level::load_map(const std::vector<std::vector<int>> map_data)
 
 void Level::cleanup_all()
 {
+    active_obstacles.clear();
+
+    for (Enemy* e : active_enemies) {
+        delete e;
+        e = nullptr;
+    }
+    active_enemies.clear();
+
+    delete player;
+    player = nullptr;
 }
 
 Game::Game()
@@ -585,8 +607,4 @@ void Game::render()
 void Game::switch_level(LevelNumber next_level)
 {
     current_level = std::make_unique<Level>(next_level);
-}
-
-void Game::cleanup()
-{
 }
