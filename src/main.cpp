@@ -15,6 +15,8 @@ const int PLAYER_MAX_HEALTH = 100;
 const float PLAYER_BASE_SPEED = 50.0f;
 const float PLAYER_BASE_MELEE_DAMAGE = 10.0f;
 
+const Color SOLID_OBSTACLE_COLOR = BLUE;
+
 // 8 x 6
 const std::vector<std::vector<int>> level_one_map =
 {
@@ -160,11 +162,13 @@ private:
     void spawn_enemies();
     void spawn_obstacles();
     void load_map(const std::vector<std::vector<int>> map_data);
+    void handle_entity_obstacle_collisions();
 
     void cleanup_all();
     // void cleanup_dead_enemies();
     // void cleanup_obstacles();
     // void cleanup_player();
+
 };
 
 enum class GameScreen
@@ -374,7 +378,7 @@ Enemy::Enemy(Actor *target, Vector2 position, int max_health, float base_speed, 
 
 void Enemy::update()
 {
-    if (CheckCollisionCircles(target->position, 10.0f, position, 10.0f))
+    if (CheckCollisionCircles(target->position, PLAYER_BODY_RADIUS, position, ENEMY_BODY_RADIUS))
     {
         attack_player();
     }
@@ -383,6 +387,7 @@ void Enemy::update()
 
     update_position();
 }
+
 void Enemy::render()
 {
     DrawCircleV(position, 10.0f, GREEN);
@@ -412,7 +417,7 @@ void Obstacle::update()
 
 void Obstacle::render()
 {
-    DrawRectangle(int(position.x), int(position.y), width, height, BLUE);
+    DrawRectangle(int(position.x), int(position.y), width, height, SOLID_OBSTACLE_COLOR);
 }
 
 Level::Level(LevelNumber level_number)
@@ -459,6 +464,8 @@ void Level::update()
     {
         obs.update();
     }
+
+    handle_entity_obstacle_collisions();
 }
 
 void Level::render()
@@ -562,6 +569,23 @@ void Level::load_map(const std::vector<std::vector<int>> map_data)
             e->target = player;
         }
         std::cout << "MAP SUCCESSFULLY LOADED" << '\n';
+    }
+}
+
+void Level::handle_entity_obstacle_collisions()
+{
+    for (Obstacle &obs : active_obstacles) {
+        Rectangle obs_body_rec { obs.position.x, obs.position.y, float(obs.width), float(obs.height)};
+
+        if (CheckCollisionCircleRec(player->position, PLAYER_BODY_RADIUS, obs_body_rec)) {
+            std::cout << "workss!";
+        }
+
+        for (Enemy* en: active_enemies) {
+            if (CheckCollisionCircleRec(en->position, ENEMY_BODY_RADIUS, obs_body_rec)) {
+                std::cout << "workss!";
+            }
+        }
     }
 }
 

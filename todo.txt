@@ -5,3 +5,7 @@ do whenever:
 - [X] player controller
 - [X] player dashing
 - [X] basic enemy tracking
+
+FOR FUTURE GAMES:
+- maybe we use give enemies a unique id, and then store them in a hashmap for
+o(1) lookup time
