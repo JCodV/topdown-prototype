@@ -9,13 +9,18 @@ const int ENEMY_BODY_RADIUS = 10;
 const int ENEMY_MAX_HEALTH = 40;
 const float ENEMY_BASE_SPEED = 30.0f;
 const float ENEMY_BASE_MELEE_DAMAGE = 10.0f;
+const Color ENEMY_COLOR = GREEN;
 
 const int PLAYER_BODY_RADIUS = 15;
 const int PLAYER_MAX_HEALTH = 100;
 const float PLAYER_BASE_SPEED = 50.0f;
 const float PLAYER_BASE_MELEE_DAMAGE = 10.0f;
+const Color PLAYER_COLOR = RED;
 
 const Color SOLID_OBSTACLE_COLOR = BLUE;
+
+const int STAR_RADIUS = 5;
+const Color STAR_COLOR = YELLOW;
 
 // 8 x 6
 const std::vector<std::vector<int>> level_one_map =
@@ -43,6 +48,18 @@ public:
     virtual void update();
     virtual void render();
 
+private:
+};
+
+class Star : public Entity
+{
+public:
+    bool is_collected;
+
+    Star(Vector2 position);
+
+    void update() override;
+    void render() override;
 private:
 };
 
@@ -144,8 +161,9 @@ class Level
 public:
     LevelNumber level_number;
     Player *player;
-    std::vector<Enemy *> active_enemies;
+    std::vector<Enemy*> active_enemies;
     std::vector<Obstacle> active_obstacles;
+    std::vector<Star> active_stars;
 
     Level(LevelNumber level_number);
 
@@ -247,6 +265,21 @@ void Entity::render()
     DrawCircleV(position, ENEMY_BODY_RADIUS, RED);
 }
 
+Star::Star(Vector2 position)
+    : Entity(position), is_collected(false)
+{
+}
+
+void Star::update()
+{
+
+}
+
+void Star::render()
+{
+    DrawCircleV(position, STAR_RADIUS, YELLOW);
+}
+
 Actor::Actor(Vector2 position, float base_speed, int max_health, float base_melee_damage)
     : Entity(position),
       target(nullptr),
@@ -280,6 +313,7 @@ void Actor::update_position()
     }
 }
 
+// update later
 void Actor::static_collision_response() {
     speed = 0.0f;
 }
@@ -322,6 +356,7 @@ void Player::render()
     DrawCircleV(position, PLAYER_BODY_RADIUS, RED);
     std::string time_text = "Dash time elapsed:" + std::to_string(dash_time_elapsed);
     std::string speed_text = "Current speed:" + std::to_string(speed);
+
     DrawText(time_text.c_str(), GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f, 20, BLACK);
     DrawText(speed_text.c_str(), GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f + 30, 20, BLACK);
 }
@@ -523,6 +558,7 @@ void Level::load_map(const std::vector<std::vector<int>> map_data)
     // walls = 1
     // enemies = 2
     // player = 3
+    // star = 4
 
     int tile_width = GetScreenWidth() / map_data.size();
     int tile_height = GetScreenHeight() / map_data[0].size();
@@ -535,25 +571,31 @@ void Level::load_map(const std::vector<std::vector<int>> map_data)
             Vector2 position{(float)tile_width * i, (float)tile_height * j};
             switch (map_data[i][j])
             {
-            case 0:
-                break;
-            case 1:
-            {
-                Obstacle wall(position, tile_width, tile_height, false);
-                active_obstacles.push_back(wall);
-                break;
-            }
-            case 2:
-            {
-                Enemy *enemy = new Enemy(nullptr, position, ENEMY_MAX_HEALTH, ENEMY_BASE_SPEED, ENEMY_BASE_MELEE_DAMAGE);
-                active_enemies.push_back(enemy);
-                break;
-            }
-            case 3:
-            {
-                player = new Player(position, PLAYER_MAX_HEALTH, PLAYER_BASE_SPEED, PLAYER_BASE_MELEE_DAMAGE);
-                break;
-            }
+                case 0:
+                    break;
+                case 1:
+                {
+                    Obstacle wall(position, tile_width, tile_height, false);
+                    active_obstacles.push_back(wall);
+                    break;
+                }
+                case 2:
+                {
+                    Enemy *enemy = new Enemy(nullptr, position, ENEMY_MAX_HEALTH, ENEMY_BASE_SPEED, ENEMY_BASE_MELEE_DAMAGE);
+                    active_enemies.push_back(enemy);
+                    break;
+                }
+                case 3:
+                {
+                    player = new Player(position, PLAYER_MAX_HEALTH, PLAYER_BASE_SPEED, PLAYER_BASE_MELEE_DAMAGE);
+                    break;
+                }
+                case 4:
+                {
+                    Star star(position);
+                    active_stars.push_back(star);
+                    break;
+                }
             }
         }
     }
@@ -578,7 +620,7 @@ void Level::handle_entity_obstacle_collisions()
         Rectangle obs_body_rec { obs.position.x, obs.position.y, float(obs.width), float(obs.height)};
 
         if (CheckCollisionCircleRec(player->position, PLAYER_BODY_RADIUS, obs_body_rec)) {
-            std::cout << "workss!";
+            // std::cout << "workss!";
         }
 
         for (Enemy* en: active_enemies) {
